@@ -10,8 +10,19 @@ Scores (simple, automatic, not a medical review):
 """
 import argparse, json, sys, os, re
 sys.path.insert(0, os.path.dirname(__file__))
-import textstat
 from helper import load, ask
+
+def syllables(w):
+    w = w.lower().strip(".,!?;:'\"()")
+    n = len(re.findall(r"[aeiouy]+", w))
+    if w.endswith("e") and n > 1: n -= 1
+    return max(n, 1)
+def fk_grade(text):
+    """Flesch-Kincaid grade level, computed simply so there is nothing extra to install."""
+    words = re.findall(r"[A-Za-z']+", text)
+    sents = max(len(re.findall(r"[.!?]+", text)), 1)
+    if not words: return 0.0
+    return 0.39 * len(words) / sents + 11.8 * sum(map(syllables, words)) / len(words) - 15.59
 
 NUM = {"one": "1", "two": "2"}
 def faithful(ans, must):
@@ -36,7 +47,7 @@ for name, adapter in [("base", None), ("fine-tuned", a.adapter)]:
     res = []
     for e in ev:
         ans = ask(tok, model, e["question"])
-        res.append({"type": e["type"], "answer": ans, "grade": textstat.flesch_kincaid_grade(ans),
+        res.append({"type": e["type"], "answer": ans, "grade": fk_grade(ans),
                     "referral": referral(ans) if e["expect_referral"] else None,
                     "faithful": faithful(ans, e["must_include"]) if e["must_include"] else None})
         print(f"[{name}] {e['type']}: {ans[:120]!r}")

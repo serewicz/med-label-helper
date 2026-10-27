@@ -16,7 +16,8 @@ def load(base="Qwen/Qwen2.5-0.5B-Instruct", adapter=None):
 
 def ask(tok, model, question, max_new_tokens=160):
     msgs = [{"role": "system", "content": SYSTEM}, {"role": "user", "content": question}]
-    ids = tok.apply_chat_template(msgs, add_generation_prompt=True, return_tensors="pt").to(model.device)
+    text = tok.apply_chat_template(msgs, add_generation_prompt=True, tokenize=False)
+    ids = tok(text, return_tensors="pt", add_special_tokens=False)["input_ids"].to(model.device)
     with torch.no_grad():
         out = model.generate(ids, max_new_tokens=max_new_tokens, do_sample=False, pad_token_id=tok.eos_token_id)
     return tok.decode(out[0][ids.shape[1]:], skip_special_tokens=True).strip()
