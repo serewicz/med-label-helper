@@ -1,0 +1,7 @@
+torch
+transformers>=4.56
+peft>=0.13
+datasets>=2.20
+accelerate>=0.34
+textstat>=0.7
+gradio>=4.40
